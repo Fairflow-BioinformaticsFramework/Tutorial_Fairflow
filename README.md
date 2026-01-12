@@ -291,24 +291,7 @@ Upload a FairFlow‑generated Galaxy wrapper and it becomes available immediatel
 
 ---
 
-## Suggested structure for this repository
 
-If you want this tutorial repo to scale cleanly, keep docs and examples separated:
-
-```text
-.
-├── README.md
-├── fairflow_tutorial.md              # (optional) long-form version
-├── examples/
-│   └── clustering/
-│       ├── clustering.bala
-│       ├── run_local.sh
-│       └── expected_output/
-└── assets/
-    └── figures/
-```
-
----
 
 ## Links
 
