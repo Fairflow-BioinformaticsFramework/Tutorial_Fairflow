@@ -27,8 +27,6 @@ There is **no hidden state** and **no implicit behavior**.
 
 ## A complete `.bala` example (annotated)
 
-> Tip: if your Markdown renderer breaks on nested code fences, keep this block exactly as-is.
-
 ```lisp
 (bala clustering (
   ; This function launches a Docker container that performs single-cell RNA-seq clustering.
