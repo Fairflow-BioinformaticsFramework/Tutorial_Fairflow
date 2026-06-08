@@ -202,8 +202,8 @@ By construction, `.bala` files are:
 Clone Baryon sourcecode (Linux/macOS; on Windows use Git bash):
 
 ```bash
-git clone https://github.com/Fairflow-BioinformaticsFramework/baryon-lang.git
-cd baryon-lang
+git clone https://github.com/Fairflow-BioinformaticsFramework/baryonlang.git
+cd baryonlang
 ```
 
 Generate wrappers:
@@ -211,9 +211,9 @@ Generate wrappers:
 ```bash
 python baryon.py myprogram.bala -l r
 python baryon.py myprogram.bala -lang python
-
-See [baryonlang](https://github.com/Fairflow-BioinformaticsFramework/Baryonlang) for more information on parameters.
 ```
+See [baryonlang](https://github.com/Fairflow-BioinformaticsFramework/Baryonlang) for more information on parameters.
+
 
 Supported targets include: `r`, `python`, `bash`, `nextflow`, `galaxy`, `streamflow`.
 
