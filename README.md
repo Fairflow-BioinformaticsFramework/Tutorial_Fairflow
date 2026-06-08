@@ -27,72 +27,59 @@ There is **no hidden state** and **no implicit behavior**.
 
 ## A complete `.bala` example (annotated)
 
-```lisp
-(bala clustering (
-  ; This function launches a Docker container that performs single-cell RNA-seq clustering.
-
-  ; -----------------------------
-  ; Input parameters
-  ; -----------------------------
-  (matrixFile file
-    (desc "Full path (including file name and extension) to the dense count matrix."))
-
-  (bootstrap_percentage number
-    (desc "Percentage of cells to remove for bootstrap iterations."))
-
-  (stabilityThreshold number
-    (desc "Stability threshold for cluster evaluation."))
-
-  (permutation integer
-    (desc "Number of permutations to perform."))
-
-  (separator (enum ("tab" ","))
-    (desc "Separator used in the matrix loading function. Can be 'tab' or 'comma'.
-           The function inside the Docker container must interpret 'tab' as '\\t' and 'comma' as ','."))
-
-  (geneFile file
-    (desc "Full path (including file name and extension) to the gene annotation file."))
-
-  (barcodeFile file
-    (desc "Full path (including file name and extension) to the barcode file."))
-
-  (resolution integer
-    (desc "Resolution parameter for Seurat clustering."))
-
-  (scratch_directory directory
-    (desc "Scratch directory used for temporary file storage and shared Docker volume."))
-
-  ; -----------------------------
-  ; Docker execution
-  ; -----------------------------
-  (run_docker
-    (image "repbioinfo/singlecelldownstream")
-    (volumes (scratch_directory "/scratch"))
-    (arguments "Rscript /home/clustering.R"
-               matrixFile bootstrap_percentage stabilityThreshold permutation
-               separator geneFile barcodeFile resolution))
-
-  ; -----------------------------
-  ; Description
-  ; -----------------------------
-  (desc "This function runs a Docker container to perform single-cell RNA-seq clustering with Seurat using bootstrapping and stability assessment.")
-
-  ; -----------------------------
-  ; Output definitions
-  ; -----------------------------
-  (outputs
-    (clustering.output file
-      (desc "Output file containing clustering results and stability metrics.")))
-))
+```ini
+[research]
+description=Selects genes with the highest values according to a chosen metric (expression or variance) and returns only the top X from the count matrix.
+name=topX
+#
+[run]
+command=docker run --rm
+script= Rscript /bin/top.R
+image= repbioinfo/topxv2:1
+usage= <matrixName> <format> <separator> <logged> <threshold> <type>
+#
+[directory]
+name=workDir
+description=Path to the working directory
+flag=io
+mount=/workdir
+#
+[directory]
+name=data
+description=Path to the folder containing input data and receiving output results
+mount=/data
+flag=io
+#
+[parameter]
+name=matrixName
+description=Input file name without extension
+value=annotated
+#
+[parameter]
+name=format
+values=csv, txt
+description=Input file format
+#
+[parameter]
+name=threshold
+description=Threshold for selecting top genes (typically between 10 and 2000 depending on dataset size)
+value=10
+#
+[parameter]
+name=separator
+values=',','\t'
+description=File separator (use "," for CSV, "\t" for TSV)
+#
+[parameter]
+name=logged
+values=FALSE,TRUE
+description=Indicates whether the count matrix values are already log-transformed (TRUE) or not (FALSE).
+#
+[parameter]
+name=type
+values=expression, variance
+description=Type of analysis to perform.
 ```
-
-### Notes
-
-- `volumes` maps a host directory (`scratch_directory`) to `/scratch` inside the container  
-- `arguments` mixes literals and parameter references  
-- parameters used only for mounting are **not passed** unless explicitly required by the internal script
-
----
 
 ## Step 1 — Build an immutable container (environment)
 
@@ -181,11 +168,11 @@ Write persistent outputs under `/output` and keep temporary files in `/scratch`.
 
 ## Step 3 — Define the interface with Baryon‑lang
 
-**Baryon‑lang** is a small DSL (Lisp‑style) to define and validate front ends in a **declarative** and **portable** way.
+**Baryon‑lang** is a small DSL based on the **`.bala`** format to define and validate front ends in a **declarative** and **portable** way.
 
 Each `.bala` describes:
 - inputs and parameters (typed, documented)
-- container execution (image, volumes, arguments)
+- container execution (image, script, arguments)
 - expected outputs
 
 By construction, `.bala` files are:
@@ -202,7 +189,7 @@ By construction, `.bala` files are:
 
 ### Best practices
 
-- Always define explicit types and clear `(desc ...)` strings  
+- Always define explicit types and clear `(description ...)` strings  
 - Use a shared `scratch_directory` for multi‑file workflows and mount it to `/scratch`  
 - Keep `(arguments ...)` explicit and ordered (match the script’s CLI order)  
 - Document outputs under `(outputs ...)` with meaningful names and descriptions  
@@ -212,34 +199,28 @@ By construction, `.bala` files are:
 
 ## Step 4 — Validate and generate a front end
 
-Clone and build the Baryon compiler (Linux/macOS; on Windows, run inside a Docker container):
+Clone Baryon sourcecode (Linux/macOS; on Windows use Git bash):
 
 ```bash
 git clone https://github.com/Fairflow-BioinformaticsFramework/baryon-lang.git
 cd baryon-lang
-go build -o baryon-lang
-```
-
-Validate a `.bala` file:
-
-```bash
-./baryon-lang -input myprogram.bala -check
 ```
 
 Generate wrappers:
 
 ```bash
-./baryon-lang -input myprogram.bala -lang r
-./baryon-lang -input myprogram.bala -lang python
-./baryon-lang -input myprogram.bala -lang bash
+python baryon.py myprogram.bala -l r
+python baryon.py myprogram.bala -lang python
+
+See [baryonlang](https://github.com/Fairflow-BioinformaticsFramework/Baryonlang) for more information on parameters.
 ```
 
-Supported targets typically include: `r`, `python`, `bash`, `nextflow`, `galaxy`, `streamflow`.
+Supported targets include: `r`, `python`, `bash`, `nextflow`, `galaxy`, `streamflow`.
 
 The generated wrapper contains:
 - callable function with typed arguments
 - validation + error handling
-- reproducible Docker invocation from the `run_docker` block
+- reproducible Docker invocation from the `run` block
 
 ---
 
@@ -294,6 +275,6 @@ Upload a FairFlow‑generated Galaxy wrapper and it becomes available immediatel
 ## Links
 
 - FairFlow organization: https://github.com/Fairflow-BioinformaticsFramework  
-- Baryon‑lang: https://github.com/Fairflow-BioinformaticsFramework/baryon-lang  
+- Baryon lang: https://github.com/Fairflow-BioinformaticsFramework/baryonlang  
 - Galaxy distribution (immutable): https://github.com/Fairflow-BioinformaticsFramework/galaxy-formed  
 - Lemaitre (bundled with Galaxy‑formed): http://localhost:8000
